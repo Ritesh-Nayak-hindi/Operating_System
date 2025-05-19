@@ -5,63 +5,91 @@ typedef struct {
     int task_id;
     int execution_time;
     int period;
-    int deadline;
     int remaining_time;
+    int next_release_time;
+    int deadline;
 } Task;
 
-int compare_by_deadline(const void *a, const void *b) {
-    Task *task_a = (Task *)a;
-    Task *task_b = (Task *)b;
-    return task_a->deadline - task_b->deadline;
-}
-
-void EDF_Scheduling(Task tasks[], int num_tasks) {
-    int time = 0;
-    int completed_tasks = 0;
-
-    while (completed_tasks < num_tasks) {
-        Task ready_queue[num_tasks];
-        int ready_count = 0;
-
-        for (int i = 0; i < num_tasks; i++) {
-            if (tasks[i].remaining_time > 0 && tasks[i].deadline > time) {
-                ready_queue[ready_count++] = tasks[i];
-            }
+int lcm(int a, int b) {
+    int max = (a > b) ? a : b;
+    while (1) {
+        if (max % a == 0 && max % b == 0) {
+            return max;
         }
-
-        if (ready_count == 0) {
-            printf("No tasks are ready to run at time %d\n", time);
-            time++;
-            continue;
-        }
-
-        qsort(ready_queue, ready_count, sizeof(Task), compare_by_deadline);
-
-        Task *current_task = &ready_queue[0];
-
-        printf("At time %d, executing task %d (Remaining time: %d, Deadline: %d)\n", time, current_task->task_id, current_task->remaining_time, current_task->deadline);
-
-        current_task->remaining_time--;
-
-        if (current_task->remaining_time == 0) {
-            completed_tasks++;
-            printf("Task %d completed at time %d\n", current_task->task_id, time + 1);
-        }
-
-        time++;
+        max++;
     }
 }
 
-int main() {
-    Task tasks[] = {
-        {1, 3, 5, 5, 3},
-        {2, 2, 7, 7, 2},
-        {3, 1, 4, 4, 1},
-        {4, 4, 10, 10, 4}
-    };
-    int num_tasks = sizeof(tasks) / sizeof(tasks[0]);
+int calculate_period_lcm(Task T[], int n) {
+    int res = T[0].period;
+    for (int i = 1; i < n; i++) {
+        res = lcm(res, T[i].period);
+    }
+    return res;
+}
 
-    EDF_Scheduling(tasks, num_tasks);
+int main(void) {
+    int n;
+    printf("ENTER THE NUMBER OF TASKS TO BE PERFORMED: ");
+    scanf("%d", &n);
+
+    Task T[n];
+    for (int i = 0; i < n; i++) {
+        printf("ENTER EXECUTION TIME AND PERIOD FOR TASK %d: ", i + 1);
+        scanf("%d%d", &T[i].execution_time, &T[i].period);
+        T[i].task_id = i + 1;
+        T[i].next_release_time = 0;
+        T[i].remaining_time = 0;
+        T[i].deadline = T[i].period; // Initial deadline = period
+    }
+
+    int total_time = calculate_period_lcm(T, n);
+    int busy_time = 0;
+    int last_task = -1;
+
+    for (int time = 0; time < total_time; time++) {
+
+        // Release new jobs and reset remaining_time
+        for (int i = 0; i < n; i++) {
+            if (time == T[i].next_release_time) {
+                if (T[i].remaining_time > 0) {
+                    printf("!!! DEADLINE MISSED BY TASK %d at TIME %d\n", T[i].task_id, time);
+                }
+                T[i].remaining_time = T[i].execution_time;
+                T[i].next_release_time += T[i].period;
+                T[i].deadline = time + T[i].period;
+            }
+        }
+
+        // Select task with earliest deadline (EDF)
+        int min_deadline = 1e9;
+        int selected_task = -1;
+        for (int i = 0; i < n; i++) {
+            if (T[i].remaining_time > 0 && T[i].deadline < min_deadline) {
+                min_deadline = T[i].deadline;
+                selected_task = i;
+            }
+        }
+
+        // Execute selected task
+        if (selected_task != -1) {
+            printf("TIME: %d RUNNING TASK: %d\n", time + 1, T[selected_task].task_id);
+            T[selected_task].remaining_time--;
+            busy_time++;
+
+            if (last_task != -1 && last_task != selected_task && T[last_task].remaining_time > 0) {
+                printf("!!! TASK %d PREEMPTED BY TASK %d at TIME %d\n", T[last_task].task_id, T[selected_task].task_id, time + 1);
+            }
+
+            last_task = selected_task;
+        } else {
+            printf("TIME: %d IDLE\n", time + 1);
+            last_task = -1;
+        }
+    }
+
+    float cpu_utilization = (busy_time * 100.0) / total_time;
+    printf("\nCPU UTILIZATION: %.2f%%\n", cpu_utilization);
 
     return 0;
 }
