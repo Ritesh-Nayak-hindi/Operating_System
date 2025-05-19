@@ -12,12 +12,15 @@ typedef struct{
 
 void calculate_fcfs(process P[],int n,int *start_time){
     P[0].wt=*start_time;//you need to update this start time evry time you call this fucntion
+
+    // if we would like to have varibale arrival times then we need to sort the process queue by AT and then current time =start time 
     P[0].tat=P[0].bt+P[0].wt;
     for(int i=1;i<n;i++){
         P[i].wt=P[i-1].wt+P[i-1].bt;
         P[i].tat=P[i].bt+P[i].wt;
     }
     *start_time=P[n-1].wt+P[n-1].bt;
+    //here starttime=currenttime
 }
 
 void calculate_avg(int values[],int n,char *type){
