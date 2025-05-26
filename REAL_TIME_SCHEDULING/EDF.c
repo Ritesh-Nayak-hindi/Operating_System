@@ -37,9 +37,10 @@ int main(void){
         printf("ENTER THE EXECUTION TIME AND PERIOD OF THE PRCESS %d :",i+1);
         scanf("%d",&P[i].ET);
         scanf("%d",&P[i].P);
+        scanf("%d",P[i).AT;
         P[i].pid=i+1;
         P[i].RT=0;
-        P[i].NRT=0;
+        P[i].NRT=P[i].AT;
         P[i].deadline=0;
     }
     
@@ -51,8 +52,6 @@ int main(void){
                 P[i].RT=P[i].ET;
                 P[i].NRT+=P[i].P;
                 P[i].deadline=P[i].P+time;
-                P[i].AT=0;//can be made variable also
-                
             }
         }
         
